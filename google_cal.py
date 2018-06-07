@@ -1,26 +1,25 @@
 from __future__ import print_function
-from apiclient.discovery import build
-from httplib2 import Http
-from oauth2client import file, client, tools
+
 import datetime
 
-""" settings """
-MANAGED_CALENDAR_NAME = 'from cybozu'
-SCOPES = 'https://www.googleapis.com/auth/calendar'
-""" /settings """
+from apiclient.discovery import build
+from httplib2 import Http
+from oauth2client import client, file, tools
+
+from setting import MANAGED_CALENDAR_NAME, SCOPES
 
 
 # Setup the Calendar API
 def main():
-    service = get_service()
-    target_id = get_target_id(service)
+    cal_service = get_service()
+    target_id = get_target_id(cal_service)
 
     # Call the Calendar API
     now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
     print('Getting the upcoming 10 events')
-    events_result = service.events().list(calendarId=target_id,
-                                          maxResults=10, singleEvents=True,
-                                          orderBy='startTime').execute()
+    events_result = cal_service.events().list(calendarId=target_id,
+                                              maxResults=10, singleEvents=True,
+                                              orderBy='startTime').execute()
     events = events_result.get('items', [])
 
     if not events:
