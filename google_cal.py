@@ -1,37 +1,90 @@
 from __future__ import print_function
 
-from apiclient.discovery import build
+# noinspection PyProtectedMember
+from apiclient.discovery import Resource, build
 from httplib2 import Http
 from oauth2client import client, file, tools
 
-from setting_manager import public_values
+from setting_manager import now, public_values
 
 scope = public_values['google_scope']
 MANAGED_CALENDAR_NAME = ''
 
-# Setup the Calendar API
-def main(cybozu_data):
-    cal_service = get_service()
-    target_id = get_target_id(cal_service)
 
-    # Call the Calendar API
-    print('Getting the upcoming 10 events')
-    events_result = cal_service.events().list(calendarId=target_id,
-                                              maxResults=10, singleEvents=True,
-                                              orderBy='startTime').execute()
-    events = events_result.get('items', [])
+def register_schedule(cal_service: Resource, target_id: str, schedules: dict, common: dict):
+    for schedule in schedules:
+        body = {}
+        body['summary'] = schedule['title']
+        body.update(get_times(schedule))
+        for facility in schedule['facilities']:
+            if (facility in common['place']):
+                body['location'] = common['place'][facility]
+        description = public_values['template'].format(
+            schedule['body'],
+            resolve_id(common['user'], schedule['users']),
+            resolve_id(common['facility']['other'], schedule['facilities'])
+        )
+        body['description'] = description
+        print(body)
+        cal_service.events().insert(calendarId=target_id, body=body).execute()
 
-    if not events:
-        print('No upcoming events found.')
-    for event in events:
-        start = event['start'].get('dateTime', event['start'].get('date'))
-        print(start, event['summary'] if 'summary' in event else 'none')
+
+def get_times(schedule):
+    time_key = 'date' if schedule['allDay'] else 'dateTime'
+    start = schedule['start']
+    end = schedule['end']
+    if end is None:  # allDayではありえないはず
+        from datetime import datetime, timedelta
+        date = datetime.strptime(start, '%Y-%m-%dT%H:%M:%SZ') + timedelta(days=1)
+        end = datetime.strftime(
+            datetime(date.year,
+                     date.month,
+                     date.day, 0, 0,
+                     tzinfo=now.tzinfo),
+            '%Y-%m-%dT%H:%M:%S+09:00'
+        )
+    return {
+        'start': {'timeZone': now.tzinfo.__str__(), time_key: start},
+        'end': {'timeZone': now.tzinfo.__str__(), time_key: end}
+    }
 
 
-def get_service():
-    global service
-    store = file.Storage('credential.json')
+def resolve_id(master, targets):
+    result = []
+    for target in targets:
+        name = master[target]['name']  # type: str
+        result.append(str(name.replace('　', ' ')))
+    return '\n'.join(result)
+
+
+def update_schedule(schedule: dict, common: dict, prefix: str, calendar_name: str):
+    cal_service = get_service(prefix)
+    target_id = get_target_id(cal_service, calendar_name)
+
+    clear_events(cal_service, target_id)
+    register_schedule(cal_service, target_id, schedule, common)
+
+
+def clear_events(cal_service, target_id):
+    import datetime
+    utc = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z'
+    # noinspection PyUnresolvedReferences
+    events_result = cal_service \
+        .events() \
+        .list(calendarId=target_id,
+              timeMin=now.isoformat()
+              ) \
+        .execute()
+    events = events_result.get('items', [])  # type: list
+    if events:
+        for event in events:
+            cal_service.events().delete(calendarId=target_id, eventId=event['id']).execute()
+
+
+def get_service(prefix: str) -> Resource:
+    store = file.Storage('credential/{0}_credential.json'.format(prefix))
     creds = store.get()
+    # noinspection PyUnresolvedReferences
     if not creds or creds.invalid:
         flow = client.flow_from_clientsecrets('client_secret.json', scope)
         flags = tools.argparser.parse_args(args=[])
@@ -39,14 +92,13 @@ def get_service():
     return build('calendar', 'v3', http=creds.authorize(Http()))
 
 
-def get_target_id(service):
-    target = filter(lambda i: (i['summary'] if 'summary' in i else None) == MANAGED_CALENDAR_NAME,
+# noinspection PyUnresolvedReferences
+def get_target_id(service: Resource, calendar_name: str):
+    target = filter(lambda i: (i['summary'] if 'summary' in i else None) == calendar_name,
                     service.calendarList().list().execute()['items'])
     result = next(target, None)
     if result is None:
-        return service.calendars().insert(body={'summary': MANAGED_CALENDAR_NAME, 'timeZone': 'Asia/Tokyo'}).execute()['id']
+        return service.calendars() \
+            .insert(body={'summary': calendar_name, 'timeZone': 'Asia/Tokyo'}) \
+            .execute()['id']
     return result['id']
-
-
-if __name__ == '__main__':
-    main()

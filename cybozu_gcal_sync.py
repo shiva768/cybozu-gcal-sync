@@ -15,24 +15,39 @@ if len(args) > 1 and args[1] == MOCK_PARAM:
     MOCK_FLAG = True
 
 
-def cybozu_data():
-    _cybozu_data = cybozu.main()
-    hash = hashlib.sha256(pickle.dumps(_cybozu_data))
-    if hash == public_values['hash']:
-        return {}
-    save_hash(hash)
-    return _cybozu_data
+# def cybozu_data():
+#     _cybozu_data = cybozu.update_schedule()
+#     hash = hashlib.sha256(pickle.dumps(_cybozu_data))
+#     if hash == public_values['hash']:
+#         return {}
+#     save_hash(hash)
+#     return _cybozu_data
+#
+#
+# def update_google_cal(cybozu_data):
+#     google.update_schedule(cybozu_data)
 
 
-def update_google_cal(cybozu_data):
-    google.main(cybozu_data)
+def main() -> None:
+    login_info = cybozu.login({'cybozu_username': 'shibata', 'cybozu_password': ''})
+    token = cybozu.get_token(login_info)
+    common = cybozu.get_commons(login_info, token)
+    current_common_hash = hash(common)
+    common_diff = public_values['common_hash'] != current_common_hash
+    if common_diff:
+        save_hash(current_common_hash)
+
+    for sync_user in public_values['sync_users']:  # type: dict
+        login_info = cybozu.login(sync_user)
+        token = cybozu.get_token(login_info)
+        schedule_list = cybozu.get_schedule_list(login_info, token)
+        if common_diff or hash(schedule_list) != sync_user['hash']:
+            google.update_schedule(schedule_list, common, sync_user['google_credential_prefix'],
+                                   sync_user['google_managed_calendar_name'])
 
 
-def main():
-    _cybozu_data = cybozu_data()
-    if not bool(_cybozu_data):
-
-    update_google_cal(cybozu_data)
+def hash(target: object) -> str:
+    return hashlib.sha256(pickle.dumps(target)).hexdigest()
 
 
 if __name__ == '__main__':
