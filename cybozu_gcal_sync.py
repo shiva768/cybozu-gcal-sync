@@ -17,10 +17,10 @@ if len(args) > 1 and args[1] == MOCK_PARAM:
 
 # def cybozu_data():
 #     _cybozu_data = cybozu.update_schedule()
-#     hash = hashlib.sha256(pickle.dumps(_cybozu_data))
-#     if hash == public_values['hash']:
+#     create_hash = hashlib.sha256(pickle.dumps(_cybozu_data))
+#     if create_hash == public_values['create_hash']:
 #         return {}
-#     save_common_hash(hash)
+#     save_common_hash(create_hash)
 #     return _cybozu_data
 #
 #
@@ -32,7 +32,7 @@ def main() -> None:
     login_info = cybozu.login({'cybozu_username': 'shibata', 'cybozu_password': ''})
     token = cybozu.get_token(login_info)
     common = cybozu.get_commons(login_info, token)
-    current_common_hash = hash(common)
+    current_common_hash = create_hash(common)
     common_diff = public_values['common_hash'] != current_common_hash
     if common_diff:
         save_common_hash(current_common_hash)
@@ -41,14 +41,14 @@ def main() -> None:
         login_info = cybozu.login(sync_user)
         token = cybozu.get_token(login_info)
         schedule_list = cybozu.get_schedule_list(login_info, token)
-        _hash = hash(schedule_list)
-        if common_diff or _hash != sync_user['hash']:
+        _hash = create_hash(schedule_list)
+        if common_diff or _hash != sync_user['create_hash']:
             google.update_schedule(schedule_list, common, sync_user['google_credential_prefix'],
                                    sync_user['google_managed_calendar_name'])
         save_hash(index, _hash)
 
 
-def hash(target: object) -> str:
+def create_hash(target: object) -> str:
     return hashlib.sha256(pickle.dumps(target)).hexdigest()
 
 

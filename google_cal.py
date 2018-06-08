@@ -13,11 +13,12 @@ MANAGED_CALENDAR_NAME = ''
 
 def register_schedule(cal_service: Resource, target_id: str, schedules: dict, common: dict):
     for schedule in schedules:
+        # noinspection PyDictCreation
         body = {}
         body['summary'] = schedule['title']
         body.update(get_times(schedule))
         for facility in schedule['facilities']:
-            if (facility in common['place']):
+            if facility in common['place']:
                 body['location'] = common['place'][facility]
         description = public_values['template'].format(
             schedule['body'],
@@ -26,6 +27,7 @@ def register_schedule(cal_service: Resource, target_id: str, schedules: dict, co
         )
         body['description'] = description
         print(body)
+        # noinspection PyUnresolvedReferences
         cal_service.events().insert(calendarId=target_id, body=body).execute()
 
 
@@ -61,14 +63,12 @@ def update_schedule(schedule: dict, common: dict, prefix: str, calendar_name: st
     cal_service = get_service(prefix)
     target_id = get_target_id(cal_service, calendar_name)
 
+    # noinspection PyTypeChecker
     clear_events(cal_service, target_id)
     register_schedule(cal_service, target_id, schedule, common)
 
 
 def clear_events(cal_service, target_id):
-    import datetime
-    utc = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z'
-    # noinspection PyUnresolvedReferences
     events_result = cal_service \
         .events() \
         .list(calendarId=target_id,
