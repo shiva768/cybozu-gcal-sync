@@ -5,7 +5,7 @@ from apiclient.discovery import Resource, build
 from httplib2 import Http
 from oauth2client import client, file, tools
 
-from setting_manager import now, public_values
+from setting_manager import now, public_values, start as _start
 
 scope = public_values['google_scope']
 MANAGED_CALENDAR_NAME = ''
@@ -18,8 +18,10 @@ def register_schedule(cal_service: Resource, target_id: str, schedules: dict, co
         body['summary'] = schedule['title']
         body.update(get_times(schedule))
         for facility in schedule['facilities']:
-            if facility in common['place']:
-                body['location'] = common['place'][facility]
+            if facility in common['facility']['place']:
+                body['location'] = common['facility']['place'][facility]['name']
+                schedule['facilities'].remove(facility)
+                break
         description = public_values['template'].format(
             schedule['body'],
             resolve_id(common['user'], schedule['users']),
@@ -72,7 +74,7 @@ def clear_events(cal_service, target_id):
     events_result = cal_service \
         .events() \
         .list(calendarId=target_id,
-              timeMin=now.isoformat()
+              timeMin=_start.isoformat()
               ) \
         .execute()
     events = events_result.get('items', [])  # type: list

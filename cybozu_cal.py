@@ -1,5 +1,5 @@
-import datetime
 import json
+from datetime import datetime
 from functools import wraps
 
 import requests
@@ -8,10 +8,9 @@ import requests
 import mock
 from collection_util import list2dict, list2group_dict
 from cybozu_gcal_sync import MOCK_FLAG
-from setting_manager import PLACE_FACILITY_ID, now, public_values
+from setting_manager import PLACE_FACILITY_ID, end, public_values, start, today
 
 cybozu_url = public_values['cybozu_url']
-today = now.today()
 
 
 def get_commons(login_info: dict, token: str) -> dict:
@@ -93,8 +92,8 @@ def __common_request(login_info: dict, token: str, url: str):
 def get_schedule_list(login_info: dict, token: str):
     url = "{0}/v1/schedule/event/list".format(cybozu_url)
     headers = {'X-Requested-With': 'XMLHttpRequest'}
-    end = today + datetime.timedelta(days=360)
-    data = dict(requestToken=token, start=today, end=end, userId=login_info['AGLOGINID'])
+    data = dict(requestToken=token, start=datetime.strftime(start, '%Y-%m-%dT%H:%M:%SZ'),
+                end=datetime.strftime(end, '%Y-%m-%dT%H:%M:%SZ'), userId=login_info['AGLOGINID'])
     result = requests.post(url=url, data=data, headers=headers, cookies=login_info)
     print(result.text)
     return json.loads(result.text)['rows']

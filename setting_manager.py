@@ -41,6 +41,9 @@ def save_hash(user_index: int, _hash: str) -> None:
 
 public_values = load()
 now = datetime.now(timezone(timedelta(hours=+9), 'Asia/Tokyo'))
+today = now.today()
+start = datetime(today.year, now.month, 1, 0, 0, tzinfo=now.tzinfo)
+end = start + timedelta(days=365)
 PLACE_FACILITY_ID = 28
 MOCK_PARAM = "mock"
 MOCK_FLAG = False
