@@ -74,7 +74,8 @@ def clear_events(cal_service, target_id):
     events_result = cal_service \
         .events() \
         .list(calendarId=target_id,
-              timeMin=_start.isoformat()
+              timeMin=_start.isoformat(),
+              maxResults=999
               ) \
         .execute()
     events = events_result.get('items', [])  # type: list
