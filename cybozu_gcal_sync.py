@@ -4,7 +4,6 @@ import pickle
 import sys
 
 import cybozu_cal as cybozu
-import google_cal as google
 from setting_manager import public_values, save_common_hash, save_hash
 
 today = datetime.datetime.today()
@@ -33,6 +32,7 @@ def main() -> None:
     token = cybozu.get_token(login_info)
     common = cybozu.get_commons(login_info, token)
     current_common_hash = create_hash(common)
+    print('result:' + current_common_hash)
     common_diff = public_values['common_hash'] != current_common_hash
     if common_diff:
         save_common_hash(current_common_hash)
@@ -42,14 +42,50 @@ def main() -> None:
         token = cybozu.get_token(login_info)
         schedule_list = cybozu.get_schedule_list(login_info, token)
         _hash = create_hash(schedule_list)
-        if common_diff or _hash != sync_user['create_hash']:
-            google.update_schedule(schedule_list, common, sync_user['google_credential_prefix'],
-                                   sync_user['google_managed_calendar_name'])
+        # if common_diff or _hash != sync_user['create_hash']:
+        #     google.update_schedule(schedule_list, common, sync_user['google_credential_prefix'],
+        #                            sync_user['google_managed_calendar_name'])
         save_hash(index, _hash)
 
 
-def create_hash(target: object) -> str:
+recursive_idx = 0
+
+
+def create_hash(target):
+    global recursive_idx
+    if type(target) is dict:
+        _list = sorted(target.items(), key=lambda t: t[0])
+        for v in _list:
+            recursive_idx = recursive_idx + 1
+            print('level:' + str(recursive_idx) + ',' + str(v))
+            if type(v) in (dict, tuple):
+                v[1] = create_hash(v[1])
+            else:
+                v = hashlib.sha256(pickle.dumps(v)).hexdigest()
+    recursive_idx = recursive_idx - 1
+    print('level:' + str(recursive_idx) + ',' + str(target))
     return hashlib.sha256(pickle.dumps(target)).hexdigest()
+
+
+#
+# def create_hash(target: object) -> str:
+#     return recursive_hash(target)
+#
+#
+# def recursive_hash(target):
+#     print('outer:' + str(target))
+#     if type(target) is dict:
+#         return hashlib.sha256(pickle.dumps(sorted(target.items(), key=lambda v: inner(v)))).hexdigest()
+#     return hashlib.sha256(pickle.dumps(target)).hexdigest()
+#
+#
+# def inner(target):
+#     print('inner:' + str(target))
+#     t = target.get['id'] if type(target) is dict and 'id' in target else target[1]
+#     m = recursive_hash(t)
+#     print(str(type(m)) + ',  ' + str(target))
+#     print('hash:' + m)
+#     return m
 
 
 if __name__ == '__main__':
