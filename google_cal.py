@@ -33,7 +33,7 @@ def register_schedule(cal_service: Resource, target_id: str, schedules: dict, co
         cal_service.events().insert(calendarId=target_id, body=body).execute()
 
 
-def get_times(schedule):
+def get_times(schedule: dict):
     time_key = 'date' if schedule['allDay'] else 'dateTime'
     start = schedule['start']
     end = schedule['end']
@@ -53,7 +53,7 @@ def get_times(schedule):
     }
 
 
-def resolve_id(master, targets):
+def resolve_id(master: dict, targets: dict):
     result = []
     for target in targets:
         name = master[target]['name']  # type: str

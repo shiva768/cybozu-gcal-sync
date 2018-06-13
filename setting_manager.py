@@ -19,13 +19,22 @@ def load() -> dict:
     }
 
 
-def __file_load():
+def __file_load() -> dict:
     with open('setting.yml') as f:
         _settings = yaml.load(f)
     return _settings
 
 
-def conditional_save_common_hash(common, prev_hash):
+def conditional_save_common_hash(common: dict, prev_hash: str) -> bool:
+    """
+    パラメータcommonのhash値と、パラメータprev_hashが一致していなければ保存する
+    一致、不一致を result として返す
+
+    :param dict common: hash生成元dict
+    :param str prev_hash: 前回のhash
+    :return: common.__hash__ != prev_hash
+    :rtype: bool
+    """
     _hash = __create_hash(common)
     common_diff = _hash != prev_hash
     if common_diff:
@@ -36,7 +45,17 @@ def conditional_save_common_hash(common, prev_hash):
     return common_diff
 
 
-def conditional_save_hash(schedule, index, prev_hash):
+def conditional_save_hash(schedule: dict, index: int, prev_hash: str):
+    """
+    パラメータscheduleのhash値と、パラメータprev_hashが一致していなければ保存する
+    一致、不一致を result として返す
+
+    :param dict schedule: hash生成元dict
+    :param int index: hash保存時に使う配列のindex
+    :param dict prev_hash: 前回のhash
+    :return: schedule.__hash__ != prev_hash
+    :rtype: bool
+    """
     _hash = __create_hash(schedule)
     diff = _hash != prev_hash
     if diff:
@@ -47,7 +66,7 @@ def conditional_save_hash(schedule, index, prev_hash):
     return diff
 
 
-def __save_hash(save_func):
+def __save_hash(save_func) -> None:
     _settings = __file_load()
     with open('setting.yml', 'w') as f:
         save_func(_settings)

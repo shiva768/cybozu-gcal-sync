@@ -1,11 +1,9 @@
 import datetime
-import hashlib
-import pickle
 import sys
 
 import cybozu_cal as cybozu
 import google_cal as google
-from setting_manager import public_values, save_common_hash, save_hash
+from setting_manager import conditional_save_common_hash, conditional_save_hash, public_values
 
 today = datetime.datetime.today()
 MOCK_PARAM = "mock"
@@ -19,28 +17,21 @@ def main() -> None:
     login_info = cybozu.login({'cybozu_username': 'shibata', 'cybozu_password': ''})
     token = cybozu.get_token(login_info)
     common = cybozu.get_commons(login_info, token)
-    current_common_hash = create_hash(common)
-    print('result:' + current_common_hash)
-    common_diff = public_values['common_hash'] != current_common_hash
-    if common_diff:
-        save_common_hash(current_common_hash)
+    common_diff = conditional_save_common_hash(common, public_values['common_hash'])
 
     for index, sync_user in enumerate(public_values['sync_users']):  # type: (int, dict)
         login_info = cybozu.login(sync_user)
         token = cybozu.get_token(login_info)
         schedule_list = cybozu.get_schedule_list(login_info, token)
-        _hash = create_hash(schedule_list)
-        if common_diff or _hash != sync_user['hash']:
-            google.update_schedule(schedule_list, common, sync_user['google_credential_prefix'],
-                                   sync_user['google_managed_calendar_name'])
-        save_hash(index, _hash)
-
-
-def create_hash(target: object) -> str:
-    return hashlib.sha256(pickle.dumps(target)).hexdigest()
+        diff = conditional_save_hash(schedule_list, index, sync_user['hash'])
+        if common_diff or diff:
+            google.update_schedule(
+                schedule_list,
+                common,
+                sync_user['google_credential_prefix'],
+                sync_user['google_managed_calendar_name']
+            )
 
 
 if __name__ == '__main__':
     main()
-
-# TODO cybozu, googleはクラス使ってなんとかしたほうがさっぱりするかもしれない
