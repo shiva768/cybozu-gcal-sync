@@ -35,7 +35,7 @@ def save_common_hash(_hash: str) -> None:
 def save_hash(user_index: int, _hash: str) -> None:
     _settings = file_load()
     with open('setting.yml', 'w') as f:
-        _settings['app']['sync_users'][user_index]['create_hash'] = _hash
+        _settings['app']['sync_users'][user_index]['hash'] = _hash
         yaml.dump(_settings, f, default_flow_style=False)
 
 
