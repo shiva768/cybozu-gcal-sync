@@ -5,7 +5,7 @@ import yaml
 
 
 def load() -> dict:
-    _settings = file_load()
+    _settings = __file_load()
     settings = _settings['app']
     _cybozu = settings['cybozu']
     base_url = _cybozu['base_url']
@@ -19,24 +19,44 @@ def load() -> dict:
     }
 
 
-def file_load():
+def __file_load():
     with open('setting.yml') as f:
         _settings = yaml.load(f)
     return _settings
 
 
-def save_common_hash(_hash: str) -> None:
-    _settings = file_load()
+def conditional_save_common_hash(common, prev_hash):
+    _hash = __create_hash(common)
+    common_diff = _hash != prev_hash
+    if common_diff:
+        def save(_setting):
+            _setting['app']['cybozu']['common_hash'] = _hash
+
+        __save_hash(save)
+    return common_diff
+
+
+def conditional_save_hash(schedule, index, prev_hash):
+    _hash = __create_hash(schedule)
+    diff = _hash != prev_hash
+    if diff:
+        def save(_setting):
+            _setting['app']['sync_users'][index]['hash'] = _hash
+
+        __save_hash(save)
+    return diff
+
+
+def __save_hash(save_func):
+    _settings = __file_load()
     with open('setting.yml', 'w') as f:
-        _settings['app']['cybozu']['common_hash'] = _hash
+        save_func(_settings)
         yaml.dump(_settings, f, default_flow_style=False)
 
 
-def save_hash(user_index: int, _hash: str) -> None:
-    _settings = file_load()
-    with open('setting.yml', 'w') as f:
-        _settings['app']['sync_users'][user_index]['hash'] = _hash
-        yaml.dump(_settings, f, default_flow_style=False)
+def __create_hash(target: object) -> str:
+    import hashlib, pickle
+    return hashlib.sha256(pickle.dumps(target)).hexdigest()
 
 
 public_values = load()
