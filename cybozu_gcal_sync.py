@@ -30,7 +30,7 @@ def main() -> None:
         token = cybozu.get_token(login_info)
         schedule_list = cybozu.get_schedule_list(login_info, token)
         _hash = create_hash(schedule_list)
-        if common_diff or _hash != sync_user['create_hash']:
+        if common_diff or _hash != sync_user['hash']:
             google.update_schedule(schedule_list, common, sync_user['google_credential_prefix'],
                                    sync_user['google_managed_calendar_name'])
         save_hash(index, _hash)
