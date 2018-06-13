@@ -1,3 +1,4 @@
+import collections
 import json
 from datetime import datetime
 from functools import wraps
@@ -7,7 +8,7 @@ import requests
 # noinspection PyUnresolvedReferences
 import mock
 from collection_util import list2dict, list2group_dict
-from cybozu_gcal_sync import MOCK_FLAG
+from cybozu_gcal_sync import MOCK_FLAG, create_hash
 from setting_manager import PLACE_FACILITY_ID, end, public_values, start, today
 
 cybozu_url = public_values['cybozu_url']
@@ -17,7 +18,10 @@ def get_commons(login_info: dict, token: str) -> dict:
     holiday_list = __get_holiday_list(login_info, token, today)
     facility_list = __get_facility_list(login_info, token)
     user_list = __get_user_list(login_info, token)
-    return {'facility': facility_list, 'holiday': holiday_list, 'user': user_list}
+    print('holiday_list:' + create_hash((holiday_list)))
+    print('facility_list:' + create_hash((facility_list)))
+    print('user_list:' + create_hash((user_list)))
+    return collections.OrderedDict([('facility', facility_list), ('holiday', holiday_list), ('user', user_list)])
 
 
 def __conditionally_mock_decorator(func):
@@ -60,7 +64,7 @@ def __get_holiday_list(login_info: dict, token: str, _today: datetime):
     data = dict(requestToken=token, year=_today.year)
     result = requests.post(url=url, data=data, headers=headers, cookies=login_info)
     print(result.text)
-    return json.loads(result.text)['rows']
+    return json.loads(result.text, object_pairs_hook=collections.OrderedDict)['rows']
 
 
 @__conditionally_mock_decorator
@@ -71,7 +75,10 @@ def __get_facility_list(login_info: dict, token: str):
     other_dict = {}
     for v in group_dict.values():
         other_dict.update(v)
-    return {'place': place_dict, 'other': other_dict}
+    print('group_dict:' + create_hash(group_dict))
+    print('place_dict:' + create_hash(place_dict))
+    print('other_dict:' + create_hash(collections.OrderedDict(other_dict.items())))
+    return collections.OrderedDict([('place', place_dict), ('other', other_dict)])
 
 
 @__conditionally_mock_decorator
@@ -85,7 +92,7 @@ def __common_request(login_info: dict, token: str, url: str):
     data = dict(requestToken=token)
     result = requests.post(url=url, data=data, headers=headers, cookies=login_info)
     print(result.text)
-    return json.loads(result.text)['rows']
+    return json.loads(result.text, object_pairs_hook=collections.OrderedDict)['rows']
 
 
 @__conditionally_mock_decorator
@@ -96,4 +103,4 @@ def get_schedule_list(login_info: dict, token: str):
                 end=datetime.strftime(end, '%Y-%m-%dT%H:%M:%SZ'), userId=login_info['AGLOGINID'])
     result = requests.post(url=url, data=data, headers=headers, cookies=login_info)
     print(result.text)
-    return json.loads(result.text)['rows']
+    return json.loads(result.text, object_pairs_hook=collections.OrderedDict)['rows']
