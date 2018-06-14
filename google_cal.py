@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-# noinspection PyProtectedMember
 from apiclient.discovery import Resource, build
 from httplib2 import Http
 from oauth2client import client, file, tools
@@ -12,7 +11,7 @@ from util import create_hash
 CREDENTIAL_JSON = 'credential/{0}_credential.json'
 
 
-# noinspection PyUnresolvedReferences
+# noinspection PyUnresolvedReferences,PyMethodMayBeStatic
 class GoogleCalendar:
     scope = public_values['google_scope']
 
@@ -113,6 +112,7 @@ class GoogleCalendar:
                 self.service.events().delete(calendarId=target_id, eventId=event['id']).execute()
 
     def __register_schedule(self, schedule, target_id):
+        # noinspection PyDictCreation
         body = {}
         body['summary'] = schedule['title']
         body.update(self.__get_times(schedule))
