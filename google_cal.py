@@ -62,7 +62,7 @@ def update_schedule(schedules: dict, common: dict, prefix: str, calendar_name: s
 
     _hash = create_hash(schedules)
     if _hash == __get_target_hash(target) and not common_diff:
-        print('difference none.')
+        print("{0}:difference none.".format(prefix))
         return
     target_id = target['id']
 

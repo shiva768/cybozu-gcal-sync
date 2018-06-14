@@ -12,11 +12,12 @@ def load() -> dict:
     _cybozu = settings['cybozu']
     base_url = _cybozu['base_url']
     cybozu_url = base_url.format(_cybozu['basic_auth']['username'], _cybozu['basic_auth']['password'])
+    common_hash = __load_cache()
     return {
         'cybozu_url': cybozu_url,
         'google_scope': settings['google']['scope'],
         'sync_users': settings['sync_users'],
-        'common_hash': _cybozu['common_hash'],
+        'common_hash': common_hash,
         'template': settings['event_template']
     }
 
@@ -25,6 +26,20 @@ def __file_load() -> dict:
     with open('setting.yml') as f:
         _settings = yaml.load(f)
     return _settings
+
+
+def __load_cache() -> str:
+    from os.path import exists
+    if not exists('.cache'):
+        return ''
+    with open('.cache', 'r') as f:
+        return f.readlines()[0]
+
+
+def __write_cache(_hash) -> None:
+    with open('.cache', 'w') as f:
+        f.write(_hash)
+        f.flush()
 
 
 def conditional_save_common_hash(common: dict, prev_hash: str) -> bool:
@@ -40,32 +55,8 @@ def conditional_save_common_hash(common: dict, prev_hash: str) -> bool:
     _hash = create_hash(common)
     common_diff = _hash != prev_hash
     if common_diff:
-        def save(_setting):
-            _setting['app']['cybozu']['common_hash'] = _hash
-
-        __save_hash(save)
+        __write_cache(_hash)
     return common_diff
-
-
-def conditional_save_hash(schedule: dict, index: int, prev_hash: str):
-    """
-    パラメータscheduleのhash値と、パラメータprev_hashが一致していなければ保存する
-    一致、不一致を result として返す
-
-    :param dict schedule: hash生成元dict
-    :param int index: hash保存時に使う配列のindex
-    :param dict prev_hash: 前回のhash
-    :return: schedule.__hash__ != prev_hash
-    :rtype: bool
-    """
-    _hash = create_hash(schedule)
-    diff = _hash != prev_hash
-    if diff:
-        def save(_setting):
-            _setting['app']['sync_users'][index]['hash'] = _hash
-
-        __save_hash(save)
-    return diff
 
 
 def __save_hash(save_func) -> None:
