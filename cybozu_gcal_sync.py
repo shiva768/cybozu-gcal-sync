@@ -2,7 +2,7 @@ import datetime
 import sys
 
 import cybozu_cal as cybozu
-import google_cal as google
+from google_cal import GoogleCalendar
 from setting_manager import conditional_save_common_hash, public_values
 
 today = datetime.datetime.today()
@@ -22,13 +22,16 @@ def main() -> None:
     for index, sync_user in enumerate(public_values['sync_users']):  # type: (int, dict)
         login_info = cybozu.login(sync_user)
         token = cybozu.get_token(login_info)
-        schedule_list = cybozu.get_schedule_list(login_info, token)
-        google.update_schedule(
-            schedule_list,
-            common,
+        schedules = cybozu.get_schedule_list(login_info, token)
+
+        gcal = GoogleCalendar(
+            sync_user['google_managed_calendar_name'],
             sync_user['google_credential_prefix'],
-            sync_user['google_managed_calendar_name'], common_diff
+            schedules,
+            common,
+            common_diff
         )
+        gcal.update_schedule()
 
 
 if __name__ == '__main__':
