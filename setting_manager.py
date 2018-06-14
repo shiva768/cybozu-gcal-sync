@@ -3,6 +3,8 @@ from datetime import datetime, timedelta, timezone
 
 import yaml
 
+from util import create_hash
+
 
 def load() -> dict:
     _settings = __file_load()
@@ -35,7 +37,7 @@ def conditional_save_common_hash(common: dict, prev_hash: str) -> bool:
     :return: common.__hash__ != prev_hash
     :rtype: bool
     """
-    _hash = __create_hash(common)
+    _hash = create_hash(common)
     common_diff = _hash != prev_hash
     if common_diff:
         def save(_setting):
@@ -56,7 +58,7 @@ def conditional_save_hash(schedule: dict, index: int, prev_hash: str):
     :return: schedule.__hash__ != prev_hash
     :rtype: bool
     """
-    _hash = __create_hash(schedule)
+    _hash = create_hash(schedule)
     diff = _hash != prev_hash
     if diff:
         def save(_setting):
@@ -73,11 +75,6 @@ def __save_hash(save_func) -> None:
         yaml.dump(_settings, f, default_flow_style=False)
 
 
-def __create_hash(target: object) -> str:
-    import hashlib, pickle
-    return hashlib.sha256(pickle.dumps(target)).hexdigest()
-
-
 public_values = load()
 now = datetime.now(timezone(timedelta(hours=+9), 'Asia/Tokyo'))
 today = now.today()
@@ -85,6 +82,7 @@ start = datetime(today.year, now.month, 1, 0, 0, tzinfo=now.tzinfo)
 end = start + timedelta(days=365)
 PLACE_FACILITY_ID = 28
 MOCK_PARAM = "mock"
+CALENDAR_META_HASH_BASE = 'meta:{0}'
 MOCK_FLAG = False
 if len(sys.argv) > 1 and sys.argv[1] == MOCK_PARAM:
     MOCK_FLAG = True

@@ -17,3 +17,8 @@ def list2group_dict(_list: list, key='groupId'):
 
 def list2dict(_list: list, key='id'):
     return {item[key]: item for item in _list}
+
+
+def create_hash(target: object) -> str:
+    import hashlib, pickle
+    return hashlib.sha256(pickle.dumps(target)).hexdigest()
