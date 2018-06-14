@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+from collections import OrderedDict
+
 from apiclient.discovery import Resource, build
 from httplib2 import Http
 from oauth2client import client, file, tools
@@ -52,11 +54,12 @@ class GoogleCalendar:
         target_id = self.target_calendar['id']
         matching_id = []
         for schedule in self.schedules:
-            _judgement_status, gcal_event_id = self.__get_judgement_status(target_id, schedule)
+            schedule_hash = create_hash(schedule)
+            _judgement_status, gcal_event_id = self.__get_judgement_status(target_id, schedule, schedule_hash)
             if _judgement_status != JudgementType.EQUAL_HASH:
                 if _judgement_status == JudgementType.EQUAL_ID:
                     self.__delete_schedule(target_id, gcal_event_id)
-                gcal_event_id = self.__register_schedule(schedule, target_id)
+                gcal_event_id = self.__register_schedule(schedule, target_id, schedule_hash)
             matching_id.append(gcal_event_id)
         print('deleted cybozu schedule')
         self.__delete_deleted_cybozu_schedule(target_id, matching_id)
@@ -77,8 +80,8 @@ class GoogleCalendar:
         calendar['description'] = CALENDAR_META_HASH_BASE.format(_hash)
         self.service.calendars().update(calendarId=target_id, body=calendar).execute()
 
-    def __get_judgement_status(self, target_id, schedule) -> tuple:
-        equal_hash = self.__search_events(target_id, lambda: 'hash=' + create_hash(schedule))
+    def __get_judgement_status(self, target_id: str, schedule: dict, schedule_hash) -> tuple:
+        equal_hash = self.__search_events(target_id, lambda: 'hash=' + schedule_hash)
         if equal_hash:
             return JudgementType.EQUAL_HASH, equal_hash[0]['id']
         equal_id = self.__search_events(target_id, lambda: 'cybozu_id=' + str(schedule['id']))
@@ -111,9 +114,8 @@ class GoogleCalendar:
             for event in filter(lambda e: e['id'] not in matching_id, events):
                 self.service.events().delete(calendarId=target_id, eventId=event['id']).execute()
 
-    def __register_schedule(self, schedule, target_id):
-        # noinspection PyDictCreation
-        body = {}
+    def __register_schedule(self, schedule, target_id, schedule_hash):
+        body = OrderedDict()
         body['summary'] = schedule['title']
         body.update(self.__get_times(schedule))
         for facility in schedule['facilities']:
@@ -127,7 +129,7 @@ class GoogleCalendar:
             self.__resolve_id(self.common['facility']['other'], schedule['facilities'])
         )
         body['description'] = description
-        body['extendedProperties'] = dict(private=dict(hash=create_hash(schedule), cybozu_id=schedule['id']))
+        body['extendedProperties'] = dict(private=dict(hash=schedule_hash, cybozu_id=schedule['id']))
         print(body)
         return self.service.events().insert(calendarId=target_id, body=body).execute()['id']
 
