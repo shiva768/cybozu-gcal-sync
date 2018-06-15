@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from collections import OrderedDict
+from typing import List
 
 from apiclient.discovery import Resource, build
 from httplib2 import Http
@@ -45,14 +46,13 @@ class GoogleCalendar:
         return result
 
     def update_schedule(self):
-
         _hash = create_hash(self.schedules)
         if _hash == self.__get_target_hash() and not self.common_diff:
             print("{0}:difference none.".format(self.prefix))
             return
 
         target_id = self.target_calendar['id']
-        matching_id = []
+        matching_id = []  # type: List[str]
         for schedule in self.schedules:
             schedule_hash = create_hash(schedule)
             _judgement_status, gcal_event_id = self.__get_judgement_status(target_id, schedule, schedule_hash)
@@ -75,12 +75,12 @@ class GoogleCalendar:
         matcher = regex.search(desc)
         return matcher.group(1)
 
-    def __update_target_hash(self, target_id, _hash):
+    def __update_target_hash(self, target_id: str, _hash: str):
         calendar = self.service.calendars().get(calendarId=target_id).execute()
         calendar['description'] = CALENDAR_META_HASH_BASE.format(_hash)
         self.service.calendars().update(calendarId=target_id, body=calendar).execute()
 
-    def __get_judgement_status(self, target_id: str, schedule: dict, schedule_hash) -> tuple:
+    def __get_judgement_status(self, target_id: str, schedule: dict, schedule_hash: str) -> tuple:
         equal_hash = self.__search_events(target_id, lambda: 'hash=' + schedule_hash)
         if equal_hash:
             return JudgementType.EQUAL_HASH, equal_hash[0]['id']
@@ -89,7 +89,7 @@ class GoogleCalendar:
             return JudgementType.EQUAL_ID, equal_id[0]['id']
         return JudgementType.NONE, ''
 
-    def __search_events(self, target_id, value_func):
+    def __search_events(self, target_id: str, value_func: ()) -> list:
         return self.service.events().list(
             calendarId=target_id,
             timeMin=_start.isoformat(),
@@ -98,10 +98,10 @@ class GoogleCalendar:
         ).execute() \
             .get('items', [])
 
-    def __delete_schedule(self, target_id, gcal_event_id):
+    def __delete_schedule(self, target_id: str, gcal_event_id: str):
         self.service.events().delete(calendarId=target_id, eventId=gcal_event_id).execute()
 
-    def __delete_deleted_cybozu_schedule(self, target_id, matching_id):
+    def __delete_deleted_cybozu_schedule(self, target_id: str, matching_ids: list):
         events_result = self.service \
             .events() \
             .list(calendarId=target_id,
@@ -111,10 +111,10 @@ class GoogleCalendar:
             .execute()
         events = events_result.get('items', [])  # type: list
         if events:
-            for event in filter(lambda e: e['id'] not in matching_id, events):
+            for event in filter(lambda e: e['id'] not in matching_ids, events):
                 self.service.events().delete(calendarId=target_id, eventId=event['id']).execute()
 
-    def __register_schedule(self, schedule, target_id, schedule_hash):
+    def __register_schedule(self, schedule: dict, target_id: str, schedule_hash: str):
         body = OrderedDict()
         body['summary'] = schedule['title']
         body.update(self.__get_times(schedule))
