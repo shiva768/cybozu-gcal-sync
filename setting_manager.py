@@ -6,7 +6,7 @@ import yaml
 from util import create_hash
 
 
-def load() -> dict:
+def __load() -> dict:
     _settings = __file_load()
     settings = _settings['app']
     _cybozu = settings['cybozu']
@@ -66,7 +66,7 @@ def __save_hash(save_func) -> None:
         yaml.dump(_settings, f, default_flow_style=False)
 
 
-public_values = load()
+public_values = __load()
 now = datetime.now(timezone(timedelta(hours=+9), 'Asia/Tokyo'))
 today = now.today()
 start = datetime(today.year, now.month, 1, 0, 0, tzinfo=now.tzinfo)

@@ -1,16 +1,6 @@
-import datetime
-import sys
-
 import cybozu_cal as cybozu
 from google_cal import GoogleCalendar
 from setting_manager import conditional_save_common_hash, public_values
-
-today = datetime.datetime.today()
-MOCK_PARAM = "mock"
-MOCK_FLAG = False
-args = sys.argv
-if len(args) > 1 and args[1] == MOCK_PARAM:
-    MOCK_FLAG = True
 
 
 def main() -> None:

@@ -7,8 +7,7 @@ import requests
 
 # noinspection PyUnresolvedReferences
 import mock
-from cybozu_gcal_sync import MOCK_FLAG
-from setting_manager import PLACE_FACILITY_ID, end, public_values, start, today
+from setting_manager import MOCK_FLAG, PLACE_FACILITY_ID, end, public_values, start, today
 from util import list2dict, list2group_dict
 
 cybozu_url = public_values['cybozu_url']
