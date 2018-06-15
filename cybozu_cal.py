@@ -40,7 +40,6 @@ def login(sync_user: dict) -> dict:
                 sync_user['cybozu_password'] if sync_user['cybozu_password'] is not None else '')
     url = "{0}?page=mobile".format(cybozu_url)
     result = requests.post(url=url, data=data, headers=headers)
-    print("SSID:{0}, ID:{1}".format(result.cookies['AGSESSID'], result.headers['X-Cybozu-User']))
     return dict(AGSESSID=result.cookies['AGSESSID'], AGLOGINID=result.headers['X-Cybozu-User'])
 
 
@@ -49,7 +48,6 @@ def get_token(login_info: dict) -> str:
     url = "{0}/v1/auth/context".format(cybozu_url)
     headers = {'X-Requested-With': 'XMLHttpRequest'}
     result = requests.post(url=url, headers=headers, cookies=login_info)
-    print(json.loads(result.text)['context']['requestToken'])
     return json.loads(result.text)['context']['requestToken']
 
 
@@ -59,7 +57,6 @@ def __get_holiday_list(login_info: dict, token: str, _today: datetime):
     headers = {'X-Requested-With': 'XMLHttpRequest'}
     data = dict(requestToken=token, year=_today.year)
     result = requests.post(url=url, data=data, headers=headers, cookies=login_info)
-    print(result.text)
     return json.loads(result.text, object_pairs_hook=collections.OrderedDict)['rows']
 
 
@@ -84,7 +81,6 @@ def __common_request(login_info: dict, token: str, url: str):
     headers = {'X-Requested-With': 'XMLHttpRequest'}
     data = dict(requestToken=token)
     result = requests.post(url=url, data=data, headers=headers, cookies=login_info)
-    print(result.text)
     return json.loads(result.text, object_pairs_hook=collections.OrderedDict)['rows']
 
 
@@ -95,5 +91,4 @@ def get_schedule_list(login_info: dict, token: str):
     data = dict(requestToken=token, start=datetime.strftime(start, '%Y-%m-%dT%H:%M:%SZ'),
                 end=datetime.strftime(end, '%Y-%m-%dT%H:%M:%SZ'), userId=login_info['AGLOGINID'])
     result = requests.post(url=url, data=data, headers=headers, cookies=login_info)
-    print(result.text)
     return json.loads(result.text, object_pairs_hook=collections.OrderedDict)['rows']
