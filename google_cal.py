@@ -106,6 +106,7 @@ class GoogleCalendar:
             .events() \
             .list(calendarId=target_id,
                   timeMin=_start.isoformat(),
+                  singleEvents=True,
                   maxResults=999
                   ) \
             .execute()
