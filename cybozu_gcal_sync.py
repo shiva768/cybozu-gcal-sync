@@ -15,6 +15,17 @@ def main() -> None:
         login_info = cybozu.login(sync_user)
         token = cybozu.get_token(login_info)
         schedules = cybozu.get_schedule_list(login_info, token)
+        exclude = sync_user.get('cybozu_exclude_schedule')  # type: str
+        if exclude is not None:
+            excludes = exclude.split(',')
+
+            def exclude_filter(value: dict):
+                for e in excludes:
+                    if value['title'].find(e) > 0:
+                        return False
+                return True
+
+            schedules = list(filter(exclude_filter, schedules))
         print('syncing cybozu to google schedule.')
         gcal = GoogleCalendar(
             sync_user['google_managed_calendar_name'],
