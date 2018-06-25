@@ -26,7 +26,7 @@ git clone https://github.com/shiva768/cybozu-gcal-sync.git
 
 ## Licence
 
-[MIT](https://github.com/tcnksm/tool/blob/master/LICENCE)
+[MIT](https://github.com/shiva768/cybozu-gcal-sync/blob/master/LICENSE)
 
 ## Author
 
