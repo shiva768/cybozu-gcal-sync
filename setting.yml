@@ -1,0 +1,20 @@
+app:
+  cybozu:
+    base_url: https://{0}:{1}@hoge111.co.jp/cgi-bin/cbag/ag.cgi
+    basic_auth:
+      password: hgoe123
+      username: hoge
+  event_template: "[[内容]]\n{0}\n\n[[参加者]]\n{1}\n\n[[施設]]\n{2}"
+  google:
+    scope: https://www.googleapis.com/auth/calendar
+  sync_users:
+  - cybozu_password: null
+    cybozu_username: hoge
+    cybozu_exclude_schedule: ほげ,hoge
+    google_credential_prefix: hoge
+    google_managed_calendar_name: from cybozu
+  - cybozu_password: hoge2
+    cybozu_username: hoge2
+    cybozu_exclude_schedule: 【Daily】,【Weekly】,【Monthly】
+    google_credential_prefix: hoge2
+    google_managed_calendar_name: from cybozu
