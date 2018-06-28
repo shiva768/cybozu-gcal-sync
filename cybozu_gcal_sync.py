@@ -21,7 +21,7 @@ def main() -> None:
 
             def exclude_filter(value: dict):
                 for e in excludes:
-                    if value['title'].find(e) > 0:
+                    if value['title'].find(e) >= 0:
                         return False
                 return True
 
